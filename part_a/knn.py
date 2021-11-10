@@ -1,5 +1,7 @@
 from sklearn.impute import KNNImputer
 from utils import *
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def knn_impute_by_user(matrix, valid_data, k):
@@ -37,11 +39,47 @@ def knn_impute_by_item(matrix, valid_data, k):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    acc = None
+    nbrs = KNNImputer(n_neighbors=k)
+    # We use NaN-Euclidean distance measure.
+    mat = nbrs.fit_transform(matrix.T)
+    acc = sparse_matrix_evaluate(valid_data, mat.T)
+    print("Validation Accuracy: {}".format(acc))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
     return acc
+
+
+def compute_and_draw_val_accuracy(matrix, val_data, test_data):
+    ks = [1, 6, 11, 16, 21, 26]
+    result = []
+    for k in ks:
+        result.append(knn_impute_by_user(matrix, val_data, k))
+    df_knn = pd.DataFrame({"k": ks,
+                           "correctness": result})
+    df_knn.plot(kind='bar', x='k')
+    plt.savefig("knn_by_user.png")
+    plt.show()
+
+    max_k = ks[np.argmax(result)]
+    test_acc = knn_impute_by_user(matrix, test_data, max_k)
+    print(f"Testing accuracy on k={max_k}: {test_acc}")
+
+
+    result = []
+    for k in ks:
+        result.append(knn_impute_by_item(matrix, val_data, k))
+    df_knn = pd.DataFrame({"k": ks,
+                           "correctness": result})
+    df_knn.plot(kind='bar', x='k')
+    plt.savefig("knn_by_user.png")
+    plt.show()
+
+    max_k = ks[np.argmax(result)]
+    test_acc = knn_impute_by_item(matrix, test_data, max_k)
+    print(f"Testing accuracy on k={max_k}: {test_acc}")
+
+
 
 
 def main():
@@ -54,13 +92,16 @@ def main():
     print("Shape of sparse matrix:")
     print(sparse_matrix.shape)
 
+
+
+
     #####################################################################
     # TODO:                                                             #
     # Compute the validation accuracy for each k. Then pick k* with     #
     # the best performance and report the test accuracy with the        #
     # chosen k*.                                                        #
     #####################################################################
-    pass
+    compute_and_draw_val_accuracy(sparse_matrix, val_data, test_data)
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
