@@ -21,7 +21,7 @@ def knn_impute_by_user(matrix, valid_data, k):
     # We use NaN-Euclidean distance measure.
     mat = nbrs.fit_transform(matrix)
     acc = sparse_matrix_evaluate(valid_data, mat)
-    print("Validation Accuracy: {}".format(acc))
+    print(f"Validation Accuracy with k={k}: {acc}")
     return acc
 
 
@@ -43,7 +43,7 @@ def knn_impute_by_item(matrix, valid_data, k):
     # We use NaN-Euclidean distance measure.
     mat = nbrs.fit_transform(matrix.T)
     acc = sparse_matrix_evaluate(valid_data, mat.T)
-    print("Validation Accuracy: {}".format(acc))
+    print(f"Validation Accuracy with k={k}: {acc}")
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -51,6 +51,9 @@ def knn_impute_by_item(matrix, valid_data, k):
 
 
 def compute_and_draw_val_accuracy(matrix, val_data, test_data):
+    """
+    Compute all accuracy given k and draw corresponding graphs
+    """
     ks = [1, 6, 11, 16, 21, 26]
     result = []
     for k in ks:
@@ -63,7 +66,7 @@ def compute_and_draw_val_accuracy(matrix, val_data, test_data):
 
     max_k = ks[np.argmax(result)]
     test_acc = knn_impute_by_user(matrix, test_data, max_k)
-    print(f"Testing accuracy on k={max_k}: {test_acc}")
+    print(f"Testing Accuracy on k={max_k}: {test_acc}")
 
 
     result = []
@@ -72,12 +75,12 @@ def compute_and_draw_val_accuracy(matrix, val_data, test_data):
     df_knn = pd.DataFrame({"k": ks,
                            "correctness": result})
     df_knn.plot(kind='bar', x='k')
-    plt.savefig("knn_by_user.png")
+    plt.savefig("knn_by_item.png")
     plt.show()
 
     max_k = ks[np.argmax(result)]
     test_acc = knn_impute_by_item(matrix, test_data, max_k)
-    print(f"Testing accuracy on k={max_k}: {test_acc}")
+    print(f"Testing Accuracy on k={max_k}: {test_acc}")
 
 
 
@@ -91,9 +94,6 @@ def main():
     print(sparse_matrix)
     print("Shape of sparse matrix:")
     print(sparse_matrix.shape)
-
-
-
 
     #####################################################################
     # TODO:                                                             #
