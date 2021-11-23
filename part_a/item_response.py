@@ -25,6 +25,14 @@ def neg_log_likelihood(data, theta, beta):
     # Implement the function as described in the docstring.             #
     #####################################################################
     log_lklihood = 0.
+    theta_beta_array =[]
+    for k, q in enumerate(data["question_id"]):
+        i = data["user_id"][k]
+        j = q
+        theta_beta_array.append(theta[i]-beta[j])
+    sigmoid_theta_beta_array = sigmoid(theta_beta_array)
+    likelihood_array = np.multiply(np.array(sigmoid_theta_beta_array), np.array(data["is_correct"])) + np.multiply((1-np.array(sigmoid_theta_beta_array)), (1-np.array(data["is_correct"])))
+    log_lklihood=np.sum(np.log(likelihood_array))
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -52,7 +60,21 @@ def update_theta_beta(data, lr, theta, beta):
     # TODO:                                                             #
     # Implement the function as described in the docstring.             #
     #####################################################################
-    pass
+    beta_grad = np.zeros(beta.shape)
+    theta_grad = np.zeros(theta.shape)
+    theta_beta_array =[]
+    for k, q in enumerate(data["question_id"]):
+        i = data["user_id"][k]
+        j = q
+        theta_beta_array.append(theta[i]-beta[j])
+    der_log_likelihood = -1.0*sigmoid(np.array(theta_beta_array)) + np.array(data["is_correct"])
+    for k, q in enumerate(data["question_id"]):
+        i = data["user_id"][k]
+        j = q
+        theta_grad[i]-=der_log_likelihood[k]
+        beta_grad[j]+=der_log_likelihood[k]
+    theta = theta - lr*theta_grad
+    beta = beta - lr*beta_grad
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -73,8 +95,8 @@ def irt(data, val_data, lr, iterations):
     :return: (theta, beta, val_acc_lst)
     """
     # TODO: Initialize theta and beta.
-    theta = None
-    beta = None
+    theta = np.zeros(len(set(data["user_id"])))
+    beta = np.zeros(len(set(data["question_id"])))
 
     val_acc_lst = []
 
@@ -120,7 +142,10 @@ def main():
     # Tune learning rate and number of iterations. With the implemented #
     # code, report the validation and test accuracy.                    #
     #####################################################################
-    pass
+    iterations = 10
+    lr = 0.1
+    theta, beta, val_acc_lst = irt(train_data, val_data, lr, iterations)
+    
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -129,7 +154,7 @@ def main():
     # TODO:                                                             #
     # Implement part (d)                                                #
     #####################################################################
-    pass
+    
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
