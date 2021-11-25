@@ -83,8 +83,6 @@ def compute_and_draw_val_accuracy(matrix, val_data, test_data):
     print(f"Testing Accuracy on k={max_k}: {test_acc}")
 
 
-
-
 def main():
     sparse_matrix = load_train_sparse("../data").toarray()
     val_data = load_valid_csv("../data")

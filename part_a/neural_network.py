@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
-
 import numpy as np
 import torch
 
@@ -70,7 +69,10 @@ class AutoEncoder(nn.Module):
         # Implement the function as described in the docstring.             #
         # Use sigmoid activations for f and g.                              #
         #####################################################################
-        out = inputs
+        g = nn.Sigmoid()
+        h = nn.Sigmoid()
+        out = h(self.h(g(self.g(inputs))))
+
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
@@ -90,10 +92,10 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     :param num_epoch: int
     :return: None
     """
-    # TODO: Add a regularizer to the cost function. 
-    
     # Tell PyTorch you are training the model.
     model.train()
+
+
 
     # Define optimizers and loss function.
     optimizer = optim.SGD(model.parameters(), lr=lr)
@@ -113,7 +115,7 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             nan_mask = np.isnan(train_data[user_id].unsqueeze(0).numpy())
             target[0][nan_mask] = output[0][nan_mask]
 
-            loss = torch.sum((output - target) ** 2.)
+            loss = torch.sum((output - target) ** 2.) + (lamb/2)*model.get_weight_norm() # added regularizer
             loss.backward()
 
             train_loss += loss.item()
@@ -154,6 +156,10 @@ def evaluate(model, train_data, valid_data):
 
 
 def main():
+    # set seed to ensure results are reproducible
+    np.random.seed(0)
+    torch.manual_seed(0)
+
     zero_train_matrix, train_matrix, valid_data, test_data = load_data()
 
     #####################################################################
@@ -162,16 +168,20 @@ def main():
     # validation set.                                                   #
     #####################################################################
     # Set model hyperparameters.
-    k = None
-    model = None
+    k = 10
+    num_questions = zero_train_matrix.shape[1]
+
+    model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
-    lr = None
-    num_epoch = None
-    lamb = None
+    lr = 0.05
+    num_epoch = 20
+    lamb = 0.001
 
     train(model, lr, lamb, train_matrix, zero_train_matrix,
           valid_data, num_epoch)
+
+    print(f"Test Acc: {evaluate(model, zero_train_matrix, test_data)}")
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
