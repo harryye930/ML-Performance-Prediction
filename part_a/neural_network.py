@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
-
 import numpy as np
 import torch
+
 
 def load_data(base_path="../data"):
     """ Load the data in PyTorch Tensor.
@@ -94,9 +94,9 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     """
     # Tell PyTorch you are training the model.
     model.train()
-    
-    
-    
+
+
+
     # Define optimizers and loss function.
     optimizer = optim.SGD(model.parameters(), lr=lr)
     num_student = train_data.shape[0]
@@ -157,7 +157,7 @@ def evaluate(model, train_data, valid_data):
 
 def main():
     # set seed to ensure results are reproducible
-    np.random.seed(0) 
+    np.random.seed(0)
     torch.manual_seed(0)
 
     zero_train_matrix, train_matrix, valid_data, test_data = load_data()
@@ -170,7 +170,7 @@ def main():
     # Set model hyperparameters.
     k = 10
     num_questions = zero_train_matrix.shape[1]
-    
+
     model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
@@ -185,7 +185,7 @@ def main():
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
-    
+
 
 if __name__ == "__main__":
     main()
