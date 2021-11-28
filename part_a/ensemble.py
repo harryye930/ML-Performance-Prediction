@@ -54,13 +54,12 @@ def eval_knn_base_models(k, train_matrix_bagged, valid_data):
     return knn_results
 
 
-def eval_neural_net_base_model(train_matrix_bagged, valid_data, epoch):
+def eval_neural_net_base_model(train_matrix_bagged, valid_data, epoch, k):
     zero_train_matrix = train_matrix_bagged.copy()
     zero_train_matrix[np.isnan(train_matrix_bagged)] = 0
     train_matrix_bagged = torch.FloatTensor(train_matrix_bagged)
     zero_train_matrix = torch.FloatTensor(zero_train_matrix)
 
-    k = 10
     num_questions = train_matrix_bagged.shape[1]
     model = AutoEncoder(num_questions, k)
     lr = 0.05
@@ -163,16 +162,19 @@ if __name__ == "__main__":
     print(f"KNN3 accuracy: {evaluate_ensemble(valid_data, result_knn3)}")
 
     train_matrix_bagged4 = bagging(train_matrix)
-    result_nn1 = eval_neural_net_base_model(train_matrix_bagged4, valid_data, 17)
+    result_nn1 = eval_neural_net_base_model(train_matrix_bagged4, valid_data, 17, 10)
     print(f"Neural Net 1 accuracy: {evaluate_ensemble(valid_data, result_nn1)}")
 
     train_matrix_bagged5 = bagging(train_matrix)
-    result_nn2 = eval_neural_net_base_model(train_matrix_bagged5, valid_data, 18)
+    result_nn2 = eval_neural_net_base_model(train_matrix_bagged5, valid_data, 17, 10)
     print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2)}")
 
-    ensemble_predictions = np.asmatrix([result_knn, result_nn2, result_nn1])
+    ensemble_predictions = np.asmatrix([result_knn, result_nn1, result_nn2])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
-    accuracy = evaluate_ensemble(test_data, average_predictions)
-    print(accuracy)
+
+    validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
+    print(validation_accuracy)
+    test_accuracy = evaluate_ensemble(test_data, average_predictions)
+    print(test_accuracy)
 
 
