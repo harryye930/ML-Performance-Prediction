@@ -33,10 +33,13 @@ def load_data(base_path="../data"):
 
 
 def bagging(train_matrix):
+    """
+    Select without replacement
+    """
 
     N, K = train_matrix.shape
     num_std_loss = int(N * 1/3)
-    random_indeies = random.sample(range(0, N), num_std_loss)
+    random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
     train_matrix = train_matrix.copy()
 
     for row in random_indeies:
@@ -47,6 +50,10 @@ def bagging(train_matrix):
 
 
 def eval_knn_base_models(k, train_matrix_bagged, valid_data):
+    """
+    Implement KNN on bagged dataset evaluate the accuracy.
+    """
+
     nbrs = KNNImputer(n_neighbors=k)  # best performing k = 11
     knn_result_matrix = nbrs.fit_transform(train_matrix_bagged)
     knn_results = sparse_matrix_predictions(valid_data, knn_result_matrix, threshold=0.5)
@@ -54,6 +61,9 @@ def eval_knn_base_models(k, train_matrix_bagged, valid_data):
 
 
 def eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch, k):
+    """
+    Setup hyperparameters for neural net, train and evaluate the accuracy
+    """
     zero_train_matrix = train_matrix_bagged.copy()
     zero_train_matrix[np.isnan(train_matrix_bagged)] = 0
     train_matrix_bagged = torch.FloatTensor(train_matrix_bagged)
@@ -63,7 +73,7 @@ def eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch
     model = AutoEncoder(num_questions, k)
     lr = 0.05
     lamb = 0.001
-    train_nn(model, lr, lamb, train_matrix_bagged, zero_train_matrix, valid_data, epoch)
+    train_nn(model, lr, lamb, train_matrix_bagged, zero_train_matrix, epoch)
     result, valid_acc = evaluate_nn(model, zero_train_matrix, valid_data)
     result_test, test_acc = evaluate_nn(model, zero_train_matrix, test_data)
 
@@ -71,7 +81,7 @@ def eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch
     return result
 
 
-def train_nn(model, lr, lamb, train_data, zero_train_data, valid_data, epoch):
+def train_nn(model, lr, lamb, train_data, zero_train_data, epoch):
     """ Train the neural network, where the objective also includes
     a regularizer.
 
@@ -116,7 +126,7 @@ def evaluate_nn(model, train_data, valid_data):
     :param train_data: 2D FloatTensor
     :param valid_data: A dictionary {user_id: list,
     question_id: list, is_correct: list}
-    :return: final prediction
+    :return: Array of predictions and accuracy
     """
     # Tell PyTorch you are evaluating the model.
     model.eval()
@@ -137,6 +147,9 @@ def evaluate_nn(model, train_data, valid_data):
 
 
 def evaluate_ensemble(data, prediction):
+    """
+    Evaluate the prediction (List[int]) base on the valid/test data (dict)
+    """
     total_prediction = 0
     total_accurate = 0
     for i in range(len(data["is_correct"])):
