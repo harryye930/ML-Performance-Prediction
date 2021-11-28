@@ -141,6 +141,7 @@ def evaluate(data, predictions, threshold=0.5):
     :param threshold: float
     :return: float
     """
+    print(len(data["is_correct"]),  len(predictions))
     if len(data["is_correct"]) != len(predictions):
         raise Exception("Mismatch of dimensions between data and prediction.")
     if isinstance(predictions, list):

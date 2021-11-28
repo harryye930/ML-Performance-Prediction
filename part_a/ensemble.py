@@ -9,7 +9,6 @@ import pandas as pd
 from utils import *
 from neural_network import AutoEncoder
 import random
-from neural_network import evaluate
 
 
 def load_data(base_path="../data"):
@@ -54,7 +53,7 @@ def eval_knn_base_models(k, train_matrix_bagged, valid_data):
     return knn_results
 
 
-def eval_neural_net_base_model(train_matrix_bagged, valid_data, epoch, k):
+def eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch, k):
     zero_train_matrix = train_matrix_bagged.copy()
     zero_train_matrix[np.isnan(train_matrix_bagged)] = 0
     train_matrix_bagged = torch.FloatTensor(train_matrix_bagged)
@@ -65,7 +64,10 @@ def eval_neural_net_base_model(train_matrix_bagged, valid_data, epoch, k):
     lr = 0.05
     lamb = 0.001
     train_nn(model, lr, lamb, train_matrix_bagged, zero_train_matrix, valid_data, epoch)
-    result = evaluate_nn(model, zero_train_matrix, valid_data)
+    result, valid_acc = evaluate_nn(model, zero_train_matrix, valid_data)
+    result_test, test_acc = evaluate_nn(model, zero_train_matrix, test_data)
+
+    print(f"valid acc: {valid_acc}, test acc: {test_acc}")
     return result
 
 
@@ -106,8 +108,6 @@ def train_nn(model, lr, lamb, train_data, zero_train_data, valid_data, epoch):
             train_loss += loss.item()
             optimizer.step()
 
-        return evaluate_nn(model, zero_train_data, valid_data)
-
 
 def evaluate_nn(model, train_data, valid_data):
     """ Evaluate the valid_data on the current model.
@@ -121,17 +121,19 @@ def evaluate_nn(model, train_data, valid_data):
     # Tell PyTorch you are evaluating the model.
     model.eval()
     result = []
+    total = 0
+    correct = 0
 
     for i, u in enumerate(valid_data["user_id"]):
         inputs = Variable(train_data[u]).unsqueeze(0)
         output = model(inputs)
         guess = output[0][valid_data["question_id"][i]].item() >= 0.5
         if guess == valid_data["is_correct"][i]:
-            result.append(1)
-        else:
-            result.append(0)
+            correct += 1
+        result.append(output[0][valid_data["question_id"][i]].item())
+        total += 1
 
-    return result
+    return result, correct/total
 
 
 def evaluate_ensemble(data, prediction):
@@ -144,6 +146,7 @@ def evaluate_ensemble(data, prediction):
             total_accurate += 1
         total_prediction += 1
     return total_accurate / float(total_prediction)
+    # return evaluate(data, prediction)
 
 
 if __name__ == "__main__":
@@ -162,14 +165,18 @@ if __name__ == "__main__":
     print(f"KNN3 accuracy: {evaluate_ensemble(valid_data, result_knn3)}")
 
     train_matrix_bagged4 = bagging(train_matrix)
-    result_nn1 = eval_neural_net_base_model(train_matrix_bagged4, valid_data, 17, 10)
+    result_nn1 = eval_neural_net_base_model(train_matrix_bagged4, valid_data, test_data, epoch=18, k=10)
     print(f"Neural Net 1 accuracy: {evaluate_ensemble(valid_data, result_nn1)}")
 
     train_matrix_bagged5 = bagging(train_matrix)
-    result_nn2 = eval_neural_net_base_model(train_matrix_bagged5, valid_data, 17, 10)
+    result_nn2 = eval_neural_net_base_model(train_matrix_bagged5, valid_data, test_data, epoch=18, k=10)
     print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2)}")
 
-    ensemble_predictions = np.asmatrix([result_knn, result_nn1, result_nn2])
+    train_matrix_bagged6 = bagging(train_matrix)
+    result_nn3 = eval_neural_net_base_model(train_matrix_bagged6, valid_data, test_data, epoch=18, k=10)
+    print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2)}")
+
+    ensemble_predictions = np.asmatrix([result_nn1, result_nn2, result_nn3])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
 
     validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
