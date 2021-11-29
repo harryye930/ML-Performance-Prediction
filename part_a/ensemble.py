@@ -74,11 +74,11 @@ def eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch
     lr = 0.05
     lamb = 0.001
     train_nn(model, lr, lamb, train_matrix_bagged, zero_train_matrix, epoch)
-    result, valid_acc = evaluate_nn(model, zero_train_matrix, valid_data)
+    result_train, valid_acc = evaluate_nn(model, zero_train_matrix, valid_data)
     result_test, test_acc = evaluate_nn(model, zero_train_matrix, test_data)
 
     print(f"valid acc: {valid_acc}, test acc: {test_acc}")
-    return result
+    return result_train, result_test
 
 
 def train_nn(model, lr, lamb, train_data, zero_train_data, epoch):
@@ -165,35 +165,40 @@ def evaluate_ensemble(data, prediction):
 if __name__ == "__main__":
     train_matrix, valid_data, test_data = load_data()
 
-    train_matrix_bagged = bagging(train_matrix)
-    result_knn = eval_knn_base_models(11, train_matrix_bagged, valid_data)
-    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn)}")
+    # train_matrix_bagged = bagging(train_matrix)
+    # result_knn = eval_knn_base_models(11, train_matrix_bagged, valid_data)
+    # print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn)}")
+    #
+    # train_matrix_bagged = bagging(train_matrix)
+    # result_knn2 = eval_knn_base_models(16, train_matrix_bagged, valid_data)
+    # print(f"KNN2 accuracy: {evaluate_ensemble(valid_data, result_knn2)}")
+    #
+    # train_matrix_bagged = bagging(train_matrix)
+    # result_knn3 = eval_knn_base_models(6, train_matrix_bagged, valid_data)
+    # print(f"KNN3 accuracy: {evaluate_ensemble(valid_data, result_knn3)}")
 
     train_matrix_bagged = bagging(train_matrix)
-    result_knn2 = eval_knn_base_models(16, train_matrix_bagged, valid_data)
-    print(f"KNN2 accuracy: {evaluate_ensemble(valid_data, result_knn2)}")
+    result_nn1_valid, result_nn1_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
+    print(f"Neural Net 1 accuracy: {evaluate_ensemble(valid_data, result_nn1_valid)}")
+    print(f"Neural Net 1 accuracy: {evaluate_ensemble(test_data, result_nn1_test)}")
 
     train_matrix_bagged = bagging(train_matrix)
-    result_knn3 = eval_knn_base_models(6, train_matrix_bagged, valid_data)
-    print(f"KNN3 accuracy: {evaluate_ensemble(valid_data, result_knn3)}")
+    result_nn2_valid, result_nn2_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
+    print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2_valid)}")
+    print(f"Neural Net 2 accuracy: {evaluate_ensemble(test_data, result_nn2_test)}")
 
     train_matrix_bagged = bagging(train_matrix)
-    result_nn1 = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
-    print(f"Neural Net 1 accuracy: {evaluate_ensemble(valid_data, result_nn1)}")
+    result_nn3_valid, result_nn3_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
+    print(f"Neural Net 3 accuracy: {evaluate_ensemble(valid_data, result_nn3_valid)}")
+    print(f"Neural Net 3 accuracy: {evaluate_ensemble(test_data, result_nn3_test)}")
 
-    train_matrix_bagged = bagging(train_matrix)
-    result_nn2 = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
-    print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2)}")
-
-    train_matrix_bagged = bagging(train_matrix)
-    result_nn3 = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
-    print(f"Neural Net 3 accuracy: {evaluate_ensemble(valid_data, result_nn3)}")
-
-    ensemble_predictions = np.asmatrix([result_knn, result_knn2, result_knn3, result_nn1, result_nn2, result_nn3])
+    ensemble_predictions = np.asmatrix([result_nn1_valid, result_nn2_valid, result_nn3_valid])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
-
     validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
     print(validation_accuracy)
+
+    ensemble_predictions = np.asmatrix([result_nn1_test, result_nn2_test, result_nn3_test])
+    average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     test_accuracy = evaluate_ensemble(test_data, average_predictions)
     print(test_accuracy)
 
