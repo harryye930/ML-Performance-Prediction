@@ -165,17 +165,23 @@ def evaluate_ensemble(data, prediction):
 if __name__ == "__main__":
     train_matrix, valid_data, test_data = load_data()
 
-    # train_matrix_bagged = bagging(train_matrix)
-    # result_knn = eval_knn_base_models(11, train_matrix_bagged, valid_data)
-    # print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn)}")
-    #
-    # train_matrix_bagged = bagging(train_matrix)
-    # result_knn2 = eval_knn_base_models(16, train_matrix_bagged, valid_data)
-    # print(f"KNN2 accuracy: {evaluate_ensemble(valid_data, result_knn2)}")
-    #
-    # train_matrix_bagged = bagging(train_matrix)
-    # result_knn3 = eval_knn_base_models(6, train_matrix_bagged, valid_data)
-    # print(f"KNN3 accuracy: {evaluate_ensemble(valid_data, result_knn3)}")
+    train_matrix_bagged = bagging(train_matrix)
+    result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
+    result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
+    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
+    print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
+
+    train_matrix_bagged = bagging(train_matrix)
+    result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
+    result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
+    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
+    print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
+
+    train_matrix_bagged = bagging(train_matrix)
+    result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
+    result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
+    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
+    print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
 
     train_matrix_bagged = bagging(train_matrix)
     result_nn1_valid, result_nn1_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
@@ -192,12 +198,12 @@ if __name__ == "__main__":
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(valid_data, result_nn3_valid)}")
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(test_data, result_nn3_test)}")
 
-    ensemble_predictions = np.asmatrix([result_nn1_valid, result_nn2_valid, result_nn3_valid])
+    ensemble_predictions = np.asmatrix([result_nn1_valid, result_nn2_valid, result_knn_valid])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
     print(validation_accuracy)
 
-    ensemble_predictions = np.asmatrix([result_nn1_test, result_nn2_test, result_nn3_test])
+    ensemble_predictions = np.asmatrix([result_nn1_test, result_nn2_test, result_knn_test])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     test_accuracy = evaluate_ensemble(test_data, average_predictions)
     print(test_accuracy)
