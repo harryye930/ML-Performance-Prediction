@@ -95,8 +95,8 @@ def irt(data, val_data, lr, iterations):
     :return: (theta, beta, val_acc_lst)
     """
     # TODO: Initialize theta and beta.
-    theta = np.zeros(len(set(data["user_id"])))
-    beta = np.zeros(len(set(data["question_id"])))
+    theta = np.zeros(max(max(data["user_id"]),len(set(data["user_id"])))+1)
+    beta = np.zeros(max(max(data["question_id"]), len(set(data["question_id"])))+1)
 
     val_acc_lst = []
 

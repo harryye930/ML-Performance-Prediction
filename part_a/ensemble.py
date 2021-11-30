@@ -49,7 +49,24 @@ def bagging(train_matrix):
 
     return train_matrix
 
+def bagging_dict(train_dict):
+    """
+    Select without replacement
+    """
 
+    N = len(train_dict['user_id'])
+    max_user = max(train_dict['user_id'])
+    max_question = max(train_dict['question_id'])
+    num_std_loss = int(N * 1/3.0)
+    random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
+    ret_train_data = {'user_id':[max_user], 'question_id':[max_question], 'is_correct':[0]}
+
+    for row in random_indeies:
+        ret_train_data['user_id'].append(train_dict['user_id'][row])
+        ret_train_data['question_id'].append(train_dict['question_id'][row])
+        ret_train_data['is_correct'].append(train_dict['is_correct'][row])
+
+    return ret_train_data
 def eval_knn_base_models(k, train_matrix_bagged, valid_data):
     """
     Implement KNN on bagged dataset evaluate the accuracy.
@@ -211,7 +228,8 @@ if __name__ == "__main__":
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(test_data, result_nn3_test)}")
 
     train_data_dict = load_train_csv("../data")
-    theta, beta, val_acc_lst = irt.irt(train_data_dict, valid_data, 0.01, 15)
+    bagged_train_dict = bagging_dict(train_data_dict)
+    theta, beta, val_acc_lst = irt.irt(bagged_train_dict, valid_data, 0.03, 20)
     valid_pred = predict_irt(valid_data, theta, beta)
     test_pred = predict_irt(test_data, theta, beta)
     print(f"IRT valid accuracy: {evaluate_ensemble(valid_data, valid_pred)}")
