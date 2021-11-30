@@ -57,7 +57,7 @@ def bagging_dict(train_dict):
     N = len(train_dict['user_id'])
     max_user = max(train_dict['user_id'])
     max_question = max(train_dict['question_id'])
-    num_std_loss = int(N * 1/3.0)
+    num_std_loss = int(N * 2/3)
     random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
     ret_train_data = {'user_id':[max_user], 'question_id':[max_question], 'is_correct':[0]}
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
     train_data_dict = load_train_csv("../data")
     bagged_train_dict = bagging_dict(train_data_dict)
-    theta, beta, val_acc_lst = irt.irt(bagged_train_dict, valid_data, 0.03, 20)
+    theta, beta, val_acc_lst = irt.irt(bagged_train_dict, valid_data, 0.01, 20)
     valid_pred = predict_irt(valid_data, theta, beta)
     test_pred = predict_irt(test_data, theta, beta)
     print(f"IRT valid accuracy: {evaluate_ensemble(valid_data, valid_pred)}")
