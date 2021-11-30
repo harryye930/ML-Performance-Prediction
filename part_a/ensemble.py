@@ -8,6 +8,7 @@ import torch.optim as optim
 import pandas as pd
 from utils import *
 from neural_network import AutoEncoder
+import item_response as irt
 import random
 
 
@@ -161,6 +162,17 @@ def evaluate_ensemble(data, prediction):
     return total_accurate / float(total_prediction)
     # return evaluate(data, prediction)
 
+def predict_irt(data, theta, beta):
+    """
+    return predictions, given theta, beta and data
+    """
+    pred = []
+    for i, q in enumerate(data["question_id"]):
+        u = data["user_id"][i]
+        x = (theta[u] - beta[q]).sum()
+        p_a = irt.sigmoid(x)
+        pred.append(p_a >= 0.5)
+    return np.array(pred)
 
 if __name__ == "__main__":
     train_matrix, valid_data, test_data = load_data()
@@ -198,12 +210,19 @@ if __name__ == "__main__":
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(valid_data, result_nn3_valid)}")
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(test_data, result_nn3_test)}")
 
-    ensemble_predictions = np.asmatrix([result_nn1_valid, result_nn2_valid, result_knn_valid])
+    train_data_dict = load_train_csv("../data")
+    theta, beta, val_acc_lst = irt.irt(train_data_dict, valid_data, 0.01, 15)
+    valid_pred = predict_irt(valid_data, theta, beta)
+    test_pred = predict_irt(test_data, theta, beta)
+    print(f"IRT valid accuracy: {evaluate_ensemble(valid_data, valid_pred)}")
+    print(f"IRT test accuracy: {evaluate_ensemble(test_data, test_pred)}")
+    
+    ensemble_predictions = np.asmatrix([result_nn1_valid, valid_pred, result_knn_valid])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
     print(validation_accuracy)
 
-    ensemble_predictions = np.asmatrix([result_nn1_test, result_nn2_test, result_knn_test])
+    ensemble_predictions = np.asmatrix([result_nn1_test, test_pred, result_knn_test])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     test_accuracy = evaluate_ensemble(test_data, average_predictions)
     print(test_accuracy)
