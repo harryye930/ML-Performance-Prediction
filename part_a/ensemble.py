@@ -90,7 +90,32 @@ def bagging(train_matrix):
         data["question_id"].append(train_data["question_id"][index])
         data["user_id"].append(train_data["user_id"][index])
         data["is_correct"].append(train_data["is_correct"][index])
+    train_matrix = fillin_na_as_mean(train_matrix)  # where we fillin NA as col mean
+
     return train_data, train_matrix
+
+
+def fillin_na_as_mean(train_matrix):
+    """
+    Fill in NA in each column of a 2d numpy array to the mean of its column
+    """
+    n = train_matrix.shape[1]
+    pd_train_matrix = pd.DataFrame(train_matrix, columns=list(map(str, range(n))))
+    mean_per_col = cal_mean_per_col(pd_train_matrix)
+    pd_train_matrix.fillna(value=mean_per_col, inplace=True)
+    return pd_train_matrix.to_numpy()
+
+
+def cal_mean_per_col(data):
+    """
+    given a pandas dataframe generate a dict of {col_name: col_mean}
+    """
+    result = {}
+    n = data.shape[1]
+    for i in range(n):
+        col_mean = data[str(i)].mean()
+        result[str(i)] = col_mean
+    return result
 
 
 def eval_knn_base_models(k, train_matrix_bagged, valid_data):
