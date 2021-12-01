@@ -74,7 +74,7 @@ def bagging(train_matrix):
     construct training matrix
     """
 
-    train_data = pd.read_csv("train_data.csv")
+    train_data = pd.read_csv("../data/train_data.csv")
     num_std, num_q = train_matrix.shape
     num_std_bagged = int(len(train_data) * 2/3)
     train_data_sampled = train_data.sample(num_std_bagged, replace=True)
