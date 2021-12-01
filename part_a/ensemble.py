@@ -29,44 +29,70 @@ def load_data(base_path="../data"):
     valid_data = load_valid_csv(base_path)
     test_data = load_public_test_csv(base_path)
 
-
     return train_matrix, valid_data, test_data
+
+
+# def bagging(train_matrix):
+#     """
+#     Select without replacement
+#     """
+#
+#     N, K = train_matrix.shape
+#     num_std_loss = int(N * 1/3)
+#     random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
+#     train_matrix = train_matrix.copy()
+#
+#     for row in random_indeies:
+#         empty_array = np.full((1, K), np.NaN)
+#         train_matrix[row] = empty_array
+#
+#     return train_matrix
+#
+# def bagging_dict(train_dict):
+#     """
+#     Select without replacement
+#     """
+#
+#     N = len(train_dict['user_id'])
+#     max_user = max(train_dict['user_id'])
+#     max_question = max(train_dict['question_id'])
+#     num_std_loss = int(N * 2/3)
+#     random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
+#     ret_train_data = {'user_id':[max_user], 'question_id':[max_question], 'is_correct':[0]}
+#
+#     for row in random_indeies:
+#         ret_train_data['user_id'].append(train_dict['user_id'][row])
+#         ret_train_data['question_id'].append(train_dict['question_id'][row])
+#         ret_train_data['is_correct'].append(train_dict['is_correct'][row])
+#
+#     return ret_train_data
 
 
 def bagging(train_matrix):
     """
-    Select without replacement
+    Read from training csv and randomly select 2/3 of them and
+    construct training matrix
     """
 
-    N, K = train_matrix.shape
-    num_std_loss = int(N * 1/3)
-    random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
-    train_matrix = train_matrix.copy()
+    train_data = pd.read_csv("train_data.csv")
+    num_std, num_q = train_matrix.shape
+    num_std_bagged = int(len(train_data) * 2/3)
+    train_data_sampled = train_data.sample(num_std_bagged, replace=True)
+    train_matrix = np.empty((num_std, num_q))
+    train_matrix[:] = np.NaN
+    data = {"user_id": [],
+            "question_id": [],
+            "is_correct": []}
+    for index in train_data_sampled.index:
+        row = train_data["user_id"][index]
+        col = train_data["question_id"][index]
+        train_matrix[row][col] = train_data["is_correct"][index]
+        data["question_id"].append(train_data["question_id"][index])
+        data["user_id"].append(train_data["user_id"][index])
+        data["is_correct"].append(train_data["is_correct"][index])
+    return train_data, train_matrix
 
-    for row in random_indeies:
-        empty_array = np.full((1, K), np.NaN)
-        train_matrix[row] = empty_array
 
-    return train_matrix
-
-def bagging_dict(train_dict):
-    """
-    Select without replacement
-    """
-
-    N = len(train_dict['user_id'])
-    max_user = max(train_dict['user_id'])
-    max_question = max(train_dict['question_id'])
-    num_std_loss = int(N * 2/3)
-    random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
-    ret_train_data = {'user_id':[max_user], 'question_id':[max_question], 'is_correct':[0]}
-
-    for row in random_indeies:
-        ret_train_data['user_id'].append(train_dict['user_id'][row])
-        ret_train_data['question_id'].append(train_dict['question_id'][row])
-        ret_train_data['is_correct'].append(train_dict['is_correct'][row])
-
-    return ret_train_data
 def eval_knn_base_models(k, train_matrix_bagged, valid_data):
     """
     Implement KNN on bagged dataset evaluate the accuracy.
@@ -177,7 +203,7 @@ def evaluate_ensemble(data, prediction):
             total_accurate += 1
         total_prediction += 1
     return total_accurate / float(total_prediction)
-    # return evaluate(data, prediction)
+
 
 def predict_irt(data, theta, beta):
     """
@@ -191,56 +217,46 @@ def predict_irt(data, theta, beta):
         pred.append(p_a >= 0.5)
     return np.array(pred)
 
+
 if __name__ == "__main__":
     train_matrix, valid_data, test_data = load_data()
 
-    train_matrix_bagged = bagging(train_matrix)
+    training_data_bagged, train_matrix_bagged = bagging(train_matrix)
     result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
     result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
     print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
     print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
 
-    train_matrix_bagged = bagging(train_matrix)
-    result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
-    result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
-    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
-    print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
 
-    train_matrix_bagged = bagging(train_matrix)
-    result_knn_valid = eval_knn_base_models(11, train_matrix_bagged, valid_data)
-    result_knn_test = eval_knn_base_models(11, train_matrix_bagged, test_data)
-    print(f"KNN accuracy: {evaluate_ensemble(valid_data, result_knn_valid)}")
-    print(f"KNN accuracy: {evaluate_ensemble(test_data, result_knn_test)}")
-
-    train_matrix_bagged = bagging(train_matrix)
+    training_data_bagged, train_matrix_bagged = bagging(train_matrix)
     result_nn1_valid, result_nn1_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
     print(f"Neural Net 1 accuracy: {evaluate_ensemble(valid_data, result_nn1_valid)}")
     print(f"Neural Net 1 accuracy: {evaluate_ensemble(test_data, result_nn1_test)}")
 
-    train_matrix_bagged = bagging(train_matrix)
+    training_data_bagged, train_matrix_bagged = bagging(train_matrix)
     result_nn2_valid, result_nn2_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
     print(f"Neural Net 2 accuracy: {evaluate_ensemble(valid_data, result_nn2_valid)}")
     print(f"Neural Net 2 accuracy: {evaluate_ensemble(test_data, result_nn2_test)}")
 
-    train_matrix_bagged = bagging(train_matrix)
+    training_data_bagged, train_matrix_bagged = bagging(train_matrix)
     result_nn3_valid, result_nn3_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(valid_data, result_nn3_valid)}")
     print(f"Neural Net 3 accuracy: {evaluate_ensemble(test_data, result_nn3_test)}")
 
     train_data_dict = load_train_csv("../data")
-    bagged_train_dict = bagging_dict(train_data_dict)
-    theta, beta, val_acc_lst = irt.irt(bagged_train_dict, valid_data, 0.01, 20)
-    valid_pred = predict_irt(valid_data, theta, beta)
-    test_pred = predict_irt(test_data, theta, beta)
-    print(f"IRT valid accuracy: {evaluate_ensemble(valid_data, valid_pred)}")
-    print(f"IRT test accuracy: {evaluate_ensemble(test_data, test_pred)}")
-    
-    ensemble_predictions = np.asmatrix([result_nn1_valid, valid_pred, result_knn_valid])
+    training_data_bagged, train_matrix_bagged = bagging(train_matrix)
+    theta, beta, val_acc_lst = irt.irt(training_data_bagged, valid_data, 0.01, 20)
+    itr_valid_pred = predict_irt(valid_data, theta, beta)
+    itr_test_pred = predict_irt(test_data, theta, beta)
+    print(f"IRT valid accuracy: {evaluate_ensemble(valid_data, itr_valid_pred)}")
+    print(f"IRT test accuracy: {evaluate_ensemble(test_data, itr_test_pred)}")
+
+    ensemble_predictions = np.asmatrix([result_nn1_valid, itr_valid_pred, result_knn_valid])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     validation_accuracy = evaluate_ensemble(valid_data, average_predictions)
     print(validation_accuracy)
 
-    ensemble_predictions = np.asmatrix([result_nn1_test, test_pred, result_knn_test])
+    ensemble_predictions = np.asmatrix([result_nn1_test, itr_test_pred, result_knn_test])
     average_predictions = np.asarray(ensemble_predictions.mean(axis=0))[0]
     test_accuracy = evaluate_ensemble(test_data, average_predictions)
     print(test_accuracy)
