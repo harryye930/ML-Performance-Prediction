@@ -2,6 +2,7 @@ from utils import *
 from torch.autograd import Variable
 
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
 import numpy as np
@@ -27,17 +28,19 @@ def load_data(base_path="../data"):
     test_data = load_public_test_csv(base_path)
 
     zero_train_matrix = train_matrix.copy()
+    zero_train_matrix = fillin_na_as_mean(zero_train_matrix)
     # Fill in the missing entries to 0.
-    zero_train_matrix[np.isnan(train_matrix)] = 0
+    # zero_train_matrix[np.isnan(train_matrix)] = 0
     # Change to Float Tensor for PyTorch.
-    zero_train_matrix = torch.FloatTensor(zero_train_matrix)
+    zero_train_matrix = torch.FloatTensor(fillin_na_as_mean(zero_train_matrix))
+
     train_matrix = torch.FloatTensor(train_matrix)
 
     return zero_train_matrix, train_matrix, valid_data, test_data
 
 
 class AutoEncoder(nn.Module):
-    def __init__(self, num_question, k=100):
+    def __init__(self, num_question, k):
         """ Initialize a class AutoEncoder.
 
         :param num_question: int
@@ -64,19 +67,24 @@ class AutoEncoder(nn.Module):
         :param inputs: user vector.
         :return: user vector.
         """
-
+        #####################################################################
+        # TODO:                                                             #
+        # Implement the function as described in the docstring.             #
+        # Use sigmoid activations for f and g.                              #
+        #####################################################################
         g = nn.Sigmoid()
         h = nn.Sigmoid()
         out = h(self.h(g(self.g(inputs))))
 
-
+        #####################################################################
+        #                       END OF YOUR CODE                            #
+        #####################################################################
         return out
 
 
 def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data, num_epoch):
     """ Train the neural network, where the objective also includes
     a regularizer.
-
     :param model: Module
     :param lr: float
     :param lamb: float
@@ -118,6 +126,7 @@ def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data
 
         train_acc.append(evaluate(model, zero_train_data, train_data))
         valid_acc.append(evaluate(model, zero_train_data, valid_data))
+        print(train_acc[-1], valid_acc[-1])
     return train_acc, valid_acc
 
 
@@ -164,6 +173,9 @@ def main():
     k = 10
     num_questions = zero_train_matrix.shape[1]
 
+    k = 10
+    num_questions = zero_train_matrix.shape[1]
+
     model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
@@ -171,8 +183,7 @@ def main():
     num_epoch = 50
     lamb = 0.001
 
-    train_acc, valid_acc = train(model, lr, lamb, train_matrix, zero_train_matrix,
-                                 train_data, valid_data, num_epoch)
+    train_acc, valid_acc = train(model, lr, lamb, train_matrix, zero_train_matrix, train_data, valid_data, num_epoch)
 
     x = list(range(num_epoch))
     plt.plot(x, train_acc, label="Train Acc")
@@ -189,7 +200,12 @@ def main():
     plt.show()
 
 
+
+
     print(f"Test Acc: {evaluate(model, zero_train_matrix, test_data)}")
+    #####################################################################
+    #                       END OF YOUR CODE                            #
+    #####################################################################
 
 
 if __name__ == "__main__":
