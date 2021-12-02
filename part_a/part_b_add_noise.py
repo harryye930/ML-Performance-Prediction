@@ -30,9 +30,9 @@ def load_data(base_path="../data"):
     zero_train_matrix = train_matrix.copy()
     zero_train_matrix = fillin_na_as_mean(zero_train_matrix)
     # Fill in the missing entries to 0.
-    # zero_train_matrix[np.isnan(train_matrix)] = 0
+    zero_train_matrix[np.isnan(train_matrix)] = 0
     # Change to Float Tensor for PyTorch.
-    zero_train_matrix = torch.FloatTensor(fillin_na_as_mean(zero_train_matrix))
+    zero_train_matrix = torch.FloatTensor(zero_train_matrix) + np.sqrt(0.1) * torch.randn(zero_train_matrix.shape)
 
     train_matrix = torch.FloatTensor(train_matrix)
 
@@ -126,7 +126,7 @@ def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data
 
         train_acc.append(evaluate(model, zero_train_data, train_data))
         valid_acc.append(evaluate(model, zero_train_data, valid_data))
-        print(train_acc[-1], valid_acc[-1])
+        print(epoch, train_acc[-1], valid_acc[-1])
     return train_acc, valid_acc
 
 
