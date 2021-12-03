@@ -174,7 +174,7 @@ def main():
     # Set model hyperparameters.
     num_questions = zero_train_matrix.shape[1]
 
-    model = AutoEncoder(num_questions, 200, 10)
+    model = AutoEncoder(num_questions, 100, 10)
     # Set optimization hyperparameters.
     lr = 0.05
     num_epoch = 50
