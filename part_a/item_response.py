@@ -1,7 +1,7 @@
 from utils import *
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 def sigmoid(x):
     """ Apply sigmoid function.
@@ -99,16 +99,19 @@ def irt(data, val_data, lr, iterations):
     beta = np.zeros(max(max(data["question_id"]), len(set(data["question_id"])))+1)
 
     val_acc_lst = []
-
+    lld_train = []
+    lld_valid = []
     for i in range(iterations):
         neg_lld = neg_log_likelihood(data, theta=theta, beta=beta)
+        lld_train.append(-1*neg_lld)
+        lld_valid.append(-1*neg_log_likelihood(val_data, theta=theta, beta=beta))
         score = evaluate(data=val_data, theta=theta, beta=beta)
         val_acc_lst.append(score)
         print("NLLK: {} \t Score: {}".format(neg_lld, score))
         theta, beta = update_theta_beta(data, lr, theta, beta)
 
     # TODO: You may change the return values to achieve what you want.
-    return theta, beta, val_acc_lst
+    return theta, beta, val_acc_lst, lld_train, lld_valid
 
 
 def evaluate(data, theta, beta):
@@ -144,7 +147,39 @@ def main():
     #####################################################################
     iterations = 15
     lr = 0.01
-    theta, beta, val_acc_lst = irt(train_data, val_data, lr, iterations)
+    theta, beta, val_acc_lst, lld_train, lld_valid = irt(train_data, val_data, lr, iterations)
+    score = evaluate(data=test_data, theta=theta, beta=beta)
+    print("Final Testing acc: {}\nFinal Validation acc:{}".format(score, val_acc_lst[-1])) 
+    
+    x = list(range(iterations))
+    plt.plot(x, lld_train, label="Train Log-Likelihood")
+    
+    plt.xlabel('# of Iterations')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Log Likelihood')
+    
+    # Set a title of the current axes.
+    plt.title('Log-Likelihood for training over 15 iterations')
+    
+    # show a legend on the plot
+    plt.legend()
+    
+    # Display a figure.
+    plt.show()
+    
+    plt.plot(x, lld_valid, label="Validation Log-Likelihood")
+    
+    plt.xlabel('# of Iterations')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Log Likelihood')
+    # Set a title of the current axes.
+    plt.title('Log-Likelihood for Validation over 15 iterations')
+    # show a legend on the plot
+    plt.legend()
+    # Display a figure.
+
+    plt.show()
+    
     
     #####################################################################
     #                       END OF YOUR CODE                            #
@@ -155,6 +190,39 @@ def main():
     # Implement part (d)                                                #
     #####################################################################
     
+    a=np.argmax(beta)
+    b=np.argmin(beta)
+    c=1771
+    beta_a=beta[a]
+    beta_b=beta[b]
+    beta_c=beta[c]
+    x = []
+    plt1=[]
+    plt2=[]
+    plt3=[]
+    min=-7.5
+    max=7.5
+    iter = 10000
+    for i in range(iter):
+        theta = min + i*(max-min)/iter
+        x.append(theta)
+        plt1.append(theta-beta_a)
+        plt2.append(theta-beta_b)
+        plt3.append(theta-beta_c)
+    
+    plt.plot(x, sigmoid(np.array(plt1)), label="Question {}".format(a))
+    plt.plot(x, sigmoid(np.array(plt2)), label="Question {}".format(b))
+    plt.plot(x, sigmoid(np.array(plt3)), label="Question {}".format(c))
+    plt.xlabel('Theta')
+    # Set the y axis label of the current axis.
+    plt.ylabel('Probability of correct answer')
+    # Set a title of the current axes.
+    plt.title('Probability of correct answer as a function of theta for question {}, {} and {}'.format(a, b, c))
+    # show a legend on the plot
+    plt.legend()
+    # Display a figure.
+
+    plt.show()
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
