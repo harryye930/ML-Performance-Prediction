@@ -5,9 +5,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
+
 import numpy as np
 import torch
 
+import matplotlib.pyplot as plt
 
 def load_data(base_path="../data"):
     """ Load the data in PyTorch Tensor.
@@ -95,11 +97,14 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
     :param num_epoch: int
     :return: None
     """
+    # will store train loss/valid acc per iteration
+    train_loss_lst = []
+    valid_acc_lst = []
     # Tell PyTorch you are training the model.
     model.train()
-
-
-
+    
+    
+    
     # Define optimizers and loss function.
     optimizer = optim.SGD(model.parameters(), lr=lr)
     num_student = train_data.shape[0]
@@ -125,8 +130,13 @@ def train(model, lr, lamb, train_data, zero_train_data, valid_data, num_epoch):
             optimizer.step()
 
         valid_acc = evaluate(model, zero_train_data, valid_data)
+        valid_acc_lst.append(valid_acc)
+        train_loss_lst.append(train_loss)
         print("Epoch: {} \tTraining Cost: {:.6f}\t "
               "Valid Acc: {}".format(epoch, train_loss, valid_acc))
+    # return train_loss, valid_acc over iterations
+    return train_loss_lst, valid_acc_lst
+
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
@@ -160,20 +170,20 @@ def evaluate(model, train_data, valid_data):
 
 def main():
     # set seed to ensure results are reproducible
-    np.random.seed(0)
+    np.random.seed(0) 
     torch.manual_seed(0)
-
+    
     zero_train_matrix, train_matrix, valid_data, test_data = load_data()
-
+    
     #####################################################################
     # TODO:                                                             #
     # Try out 5 different k and select the best k using the             #
     # validation set.                                                   #
     #####################################################################
     # Set model hyperparameters.
-    k = 10
+    k = 10 # 50, 100, 200, 500
     num_questions = zero_train_matrix.shape[1]
-
+    
     model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
@@ -181,14 +191,28 @@ def main():
     num_epoch = 50
     lamb = 0.001
 
-    train(model, lr, lamb, train_matrix, zero_train_matrix,
+    train_loss, valid_acc = train(model, lr, lamb, train_matrix, zero_train_matrix,
           valid_data, num_epoch)
+
+    x = list(range(20))
+    plt.plot(x, train_loss, label="Train Loss")
+    plt.xlabel('# of Epochs')
+   
+    plt.title('Training loss Over Epochs')
+    plt.legend()
+    plt.show()
+
+    plt.plot(x, valid_acc, label="Valid Acc")
+    plt.xlabel('# of Epochs')
+    plt.title('Validation loss Over Epochs')
+    plt.legend()
+    plt.show()
 
     print(f"Test Acc: {evaluate(model, zero_train_matrix, test_data)}")
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
-
+    
 
 if __name__ == "__main__":
     main()
