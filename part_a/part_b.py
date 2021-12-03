@@ -1,4 +1,4 @@
-from utils import *
+
 from torch.autograd import Variable
 
 import torch.nn as nn
@@ -7,6 +7,7 @@ import torch.optim as optim
 import torch.utils.data
 import numpy as np
 import torch
+import utils
 import matplotlib.pyplot as plt
 
 
@@ -22,16 +23,17 @@ def load_data(base_path="../data"):
         test_data: A dictionary {user_id: list,
         user_id: list, is_correct: list}
     """
-    train_matrix = load_train_sparse(base_path).toarray()
-    valid_data = load_valid_csv(base_path)
-    test_data = load_public_test_csv(base_path)
+    train_matrix = utils.load_train_sparse(base_path).toarray()
+    valid_data = utils.load_valid_csv(base_path)
+    test_data = utils.load_public_test_csv(base_path)
 
     zero_train_matrix = train_matrix.copy()
-    zero_train_matrix = fillin_na_as_mean(zero_train_matrix)
+    #zero_train_matrix = fillin_na_as_mean(zero_train_matrix)
     # Fill in the missing entries to 0.
     zero_train_matrix[np.isnan(train_matrix)] = 0
     # Change to Float Tensor for PyTorch.
-    zero_train_matrix = torch.FloatTensor(zero_train_matrix) + np.sqrt(0.1) * torch.randn(zero_train_matrix.shape)
+    # GAUSSIAN NOISE
+    zero_train_matrix = torch.FloatTensor(zero_train_matrix) #+ np.sqrt(0.1) * torch.randn(zero_train_matrix.shape)
 
     train_matrix = torch.FloatTensor(train_matrix)
 
@@ -39,7 +41,7 @@ def load_data(base_path="../data"):
 
 
 class AutoEncoder(nn.Module):
-    def __init__(self, num_question, k):
+    def __init__(self, num_question, k1, k2):
         """ Initialize a class AutoEncoder.
         :param num_question: int
         :param k: int
@@ -47,11 +49,10 @@ class AutoEncoder(nn.Module):
         super(AutoEncoder, self).__init__()
 
         # Define linear functions.
-        self.g = nn.Linear(num_question, k)
-        self.h = nn.Linear(k, num_question)
-
-        self.i = nn.Linear(num_question, k)
-        self.j = nn.Linear(k, num_question)
+        self.g = nn.Linear(num_question, k1)
+        self.h = nn.Linear(k1, k2)
+        self.i = nn.Linear(k2, k1)
+        self.j = nn.Linear(k1, num_question)
 
     def get_weight_norm(self):
         """ Return ||W^1||^2 + ||W^2||^2.
@@ -62,7 +63,8 @@ class AutoEncoder(nn.Module):
         i_w_norm = torch.norm(self.i.weight, 2) ** 2
         j_w_norm = torch.norm(self.j.weight, 2) ** 2
 
-        return g_w_norm + h_w_norm + i_w_norm + j_w_norm
+
+        return g_w_norm + h_w_norm #+ i_w_norm + j_w_norm
 
     def forward(self, inputs):
         """ Return a forward pass given inputs.
@@ -76,18 +78,17 @@ class AutoEncoder(nn.Module):
         #####################################################################
         g = nn.Sigmoid()
         h = nn.Sigmoid()
-        out = h(self.h(g(self.g(inputs))))
-
         i = nn.Sigmoid()
         j = nn.Sigmoid()
-        out2 = j(self.j(i(self.i(out))))
+
+        out = j(self.j(i(self.i(h(self.h(g(self.g(inputs))))))))
         #####################################################################
         #                       END OF YOUR CODE                            #
         #####################################################################
-        return out2
+        return out
 
 
-def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data, num_epoch):
+def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data, test_data, num_epoch):
     """ Train the neural network, where the objective also includes
     a regularizer.
     :param model: Module
@@ -108,6 +109,7 @@ def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data
     num_student = train_matrix.shape[0]
     train_acc = []
     valid_acc = []
+    test_acc = []
 
     for epoch in range(0, num_epoch):
         train_loss = 0.
@@ -131,8 +133,9 @@ def train(model, lr, lamb, train_matrix, zero_train_data, train_data, valid_data
 
         train_acc.append(evaluate(model, zero_train_data, train_data))
         valid_acc.append(evaluate(model, zero_train_data, valid_data))
-        print(epoch, train_acc[-1], valid_acc[-1])
-    return train_acc, valid_acc
+        test_acc.append(evaluate(model, zero_train_data, test_data))
+        print(epoch, train_acc[-1], valid_acc[-1], test_acc[-1])
+    return train_acc, valid_acc, test_acc
 
 
 def evaluate(model, train_data, valid_data):
@@ -164,31 +167,30 @@ def main():
     # set seed to ensure results are reproducible
     np.random.seed(0)
     torch.manual_seed(0)
-    train_data = load_train_csv("../data")
+    train_data = utils.load_train_csv("../data")
 
     zero_train_matrix, train_matrix, valid_data, test_data = load_data()
 
     # Set model hyperparameters.
-    k = 10
     num_questions = zero_train_matrix.shape[1]
 
-    model = AutoEncoder(num_questions, k)
-
+    model = AutoEncoder(num_questions, 200, 10)
     # Set optimization hyperparameters.
     lr = 0.05
-    num_epoch = 20
+    num_epoch = 50
     lamb = 0.001
 
-    train_acc, valid_acc = train(model, lr, lamb, train_matrix, zero_train_matrix, train_data, valid_data, num_epoch)
+    train_acc, valid_acc, test_acc = train(model, lr, lamb, train_matrix, zero_train_matrix, train_data, valid_data, test_data, num_epoch)
 
     x = list(range(num_epoch))
     plt.plot(x, train_acc, label="Train Acc")
-    plt.plot(x, valid_acc, label="Test Acc")
+    plt.plot(x, valid_acc, label="Valid Acc")
+    plt.plot(x, test_acc, label="Test Acc")
     plt.xlabel('# of Epoch')
     # Set the y axis label of the current axis.
     plt.ylabel('Accuracy')
     # Set a title of the current axes.
-    plt.title('Initial Train and Validation Accuracy of Neural Net')
+    plt.title('Train, Validation, and Test Accuracy Over Epochs')
     # show a legend on the plot
     plt.legend()
     # Display a figure.
