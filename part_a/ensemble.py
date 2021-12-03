@@ -31,43 +31,6 @@ def load_data(base_path="../data"):
 
     return train_matrix, valid_data, test_data
 
-
-# def bagging(train_matrix):
-#     """
-#     Select without replacement
-#     """
-#
-#     N, K = train_matrix.shape
-#     num_std_loss = int(N * 1/3)
-#     random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
-#     train_matrix = train_matrix.copy()
-#
-#     for row in random_indeies:
-#         empty_array = np.full((1, K), np.NaN)
-#         train_matrix[row] = empty_array
-#
-#     return train_matrix
-#
-# def bagging_dict(train_dict):
-#     """
-#     Select without replacement
-#     """
-#
-#     N = len(train_dict['user_id'])
-#     max_user = max(train_dict['user_id'])
-#     max_question = max(train_dict['question_id'])
-#     num_std_loss = int(N * 2/3)
-#     random_indeies = np.random.choice(range(0, N), size=num_std_loss, replace=True)
-#     ret_train_data = {'user_id':[max_user], 'question_id':[max_question], 'is_correct':[0]}
-#
-#     for row in random_indeies:
-#         ret_train_data['user_id'].append(train_dict['user_id'][row])
-#         ret_train_data['question_id'].append(train_dict['question_id'][row])
-#         ret_train_data['is_correct'].append(train_dict['is_correct'][row])
-#
-#     return ret_train_data
-
-
 def bagging(train_matrix):
     """
     Read from training csv and randomly select 2/3 of them and
@@ -221,9 +184,6 @@ def predict_irt(data, theta, beta):
 
 if __name__ == "__main__":
     train_matrix, valid_data, test_data = load_data()
-
-
-
 
     training_data_bagged, train_matrix_bagged = bagging(train_matrix)
     result_nn1_valid, result_nn1_test = eval_neural_net_base_model(train_matrix_bagged, valid_data, test_data, epoch=18, k=10)
