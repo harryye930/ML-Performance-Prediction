@@ -60,7 +60,7 @@ def compute_and_draw_val_accuracy(matrix, val_data, test_data):
         result.append(knn_impute_by_user(matrix, val_data, k))
     df_knn = pd.DataFrame({"k": ks,
                            "correctness": result})
-    df_knn.plot(kind='bar', x='k')
+    df_knn.plot(kind='line', x='k')
     plt.savefig("knn_by_user.png")
     plt.show()
 
@@ -74,7 +74,7 @@ def compute_and_draw_val_accuracy(matrix, val_data, test_data):
         result.append(knn_impute_by_item(matrix, val_data, k))
     df_knn = pd.DataFrame({"k": ks,
                            "correctness": result})
-    df_knn.plot(kind='bar', x='k')
+    df_knn.plot(kind='line', x='k')
     plt.savefig("knn_by_item.png")
     plt.show()
 

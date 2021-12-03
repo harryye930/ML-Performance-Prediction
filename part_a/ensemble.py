@@ -53,7 +53,7 @@ def bagging(train_matrix):
         data["question_id"].append(train_data["question_id"][index])
         data["user_id"].append(train_data["user_id"][index])
         data["is_correct"].append(train_data["is_correct"][index])
-    # train_matrix = fillin_na_as_mean(train_matrix)  # where we fillin NA as col mean
+
 
     return train_data, train_matrix
 
