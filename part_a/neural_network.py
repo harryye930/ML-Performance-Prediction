@@ -29,15 +29,18 @@ def load_data(base_path="../data"):
     zero_train_matrix = train_matrix.copy()
     # Fill in the missing entries to 0.
     zero_train_matrix[np.isnan(train_matrix)] = 0
-    # Change to Float Tensor for PyTorch.
-    zero_train_matrix = torch.FloatTensor(zero_train_matrix)
-    train_matrix = torch.FloatTensor(train_matrix)
 
-    return zero_train_matrix, train_matrix, valid_data, test_data
+    train_matrix = fillin_na_as_mean(train_matrix)
+    train_matrix = torch.FloatTensor(train_matrix)
+    train_matrix = train_matrix + (0.**0.5)*torch.randn(train_matrix.shape)  # add gaussian noise
+    # Change to Float Tensor for PyTorch.
+
+
+    return train_matrix, train_matrix, valid_data, test_data
 
 
 class AutoEncoder(nn.Module):
-    def __init__(self, num_question, k=100):
+    def __init__(self, num_question, k):
         """ Initialize a class AutoEncoder.
 
         :param num_question: int
@@ -174,8 +177,8 @@ def main():
     model = AutoEncoder(num_questions, k)
 
     # Set optimization hyperparameters.
-    lr = 0.05
-    num_epoch = 20
+    lr = 0.1
+    num_epoch = 50
     lamb = 0.001
 
     train(model, lr, lamb, train_matrix, zero_train_matrix,
